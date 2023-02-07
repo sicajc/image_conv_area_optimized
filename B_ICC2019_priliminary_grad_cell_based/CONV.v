@@ -148,6 +148,11 @@ localparam EXCEPTION = 3'd7;
 wire EXCEPTION_OCCURS = cur_state_LV1_ff == EXCEPTION || cur_state_LV2_ff == EXCEPTION || cur_kernal_ff == EXCEPTION;
 
 //================================
+//  CONTROL FLAGS
+//================================
+
+
+//================================
 //  Memory management Unit(MMU)
 //================================
 reg[ADDR_W-1:0] mem_addr_cnt; // MAX 4096
@@ -190,8 +195,8 @@ localparam K1_20 = 20'h03BD7;  // Pixel 6:  2.337494e-01
 localparam K1_21 = 20'hFD369;  // Pixel 7: -1.741791e-01
 localparam K1_22 = 20'h05E68;   // Pixel 8:  3.687744e-01
 //BIAS
-localparam [19:0] cnnBias0 = 20'h01310;  // Pixel 0: 7.446289e-02
-localparam [19:0] cnnBias1 = 20'hF7295;  // Pixel 1: -5.524139e-01
+localparam [W-1:0] cnnBias0 = 20'h01310;  // Pixel 0: 7.446289e-02
+localparam [W-1:0] cnnBias1 = 20'hF7295;  // Pixel 1: -5.524139e-01
 
 reg[(2*W+4)-1:0] alu_out_ff;
 
@@ -551,6 +556,26 @@ begin: OFFSETED_PTRS
     endcase
 end
 
+always @(posedge clk or posedge reset)
+begin: OFFSET_CNT
+    if(reset)
+    begin
+        offset_cnt <= 'd0;
+    end
+    else if(STATE_MAC)
+    begin
+        offset_cnt <= mac_done_flag ? 0 : offset_cnt + 1;
+    end
+    else if(STATE_COMPARE_FOR_MAX)
+    begin
+        offset_cnt <= local_max_found_flag ? 0 : offset_cnt + 1;
+    end
+    else
+    begin
+        offset_cnt <= offset_cnt;
+    end
+end
+
 //================================
 //  Memory management Unit(MMU)
 //================================
@@ -564,7 +589,7 @@ localparam L2_MEM_ACCESS= 3'b101;
 
 //csel
 always @(*)
-begin
+begin: CHIP_SELECT
     if(STATE_WB_L0 || STATE_RD_PIXEL_L1)
     begin
         csel = STATE_KERNAL0 ? L0_MEM0_ACCESS: L0_MEM1_ACCESS;
@@ -581,7 +606,7 @@ end
 
 //iaddr
 always @(*)
-begin
+begin: IN_ADDR
     if(RD_PIXEL_L0)
     begin
         iaddr = (offset_col-1) % CONV_IMG_W + (offset_row-1)* CONV_IMG_W;
@@ -594,7 +619,7 @@ end
 
 //crd, caddr_rd
 always @(*)
-begin
+begin: CHIP_RD
     if(STATE_RD_PIXEL_L1||STATE_RD_PIXEL_L2)
     begin
         crd = 1;
@@ -609,7 +634,7 @@ end
 
 //cwr,cdata_wr,caddr_wr
 always @(*)
-begin
+begin: CHIP_WR
     if(STATE_WB_L0)
     begin
         cwr = 1;
@@ -641,7 +666,7 @@ end
 //  Arithmetic Logic Unit(ALU)
 //================================
 always @(posedge clk or posedge rst)
-begin
+begin: ALU
     if(reset)
     begin
         alu_out_ff <=#1  'd0;
