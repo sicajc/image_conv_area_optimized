@@ -208,19 +208,19 @@ always @(posedge clk or negedge reset)
 begin: DATA_BUFFER
     if(reset)
     begin
-        data_buf <= 'd0;
+        data_buf <=#1  'd0;
     end
     else if(RD_PIXEL_L0)
     begin
-        data_buf <= idata;
+        data_buf <=#1  idata;
     end
     else if(RD_PIXEL_L1 || RD_PIXEL_L2)
     begin
-        data_buf <= cdata_rd;
+        data_buf <=#1  cdata_rd;
     end
     else
     begin
-        data_buf <= data_buf;
+        data_buf <=#1  data_buf;
     end
 end
 
@@ -235,11 +235,11 @@ always @(posedge clk or posedge reset)
 begin: LV1_FSM_CUR
     if(reset)
     begin
-        cur_state_LV1_ff <= IDLE ;
+        cur_state_LV1_ff <=#1  IDLE ;
     end
     else
     begin
-        cur_state_LV1_ff <= next_state_LV1;
+        cur_state_LV1_ff <=#1  next_state_LV1;
     end
 end
 
@@ -278,11 +278,11 @@ always @(posedge clk or posedge reset)
 begin: LV2_FSM_CUR
     if(reset)
     begin
-        cur_state_LV2_ff <= RD_PIXEL_L0;
+        cur_state_LV2_ff <=#1  RD_PIXEL_L0;
     end
     else
     begin
-        cur_state_LV2_ff <= next_state_LV2;
+        cur_state_LV2_ff <=#1  next_state_LV2;
     end
 end
 
@@ -384,26 +384,26 @@ always @(posedge clk or posedge rst)
 begin: CURRENT_KERNAL
     if(reset)
     begin
-        cur_kernal_ff <= K0;
+        cur_kernal_ff <=#1  K0;
     end
     else
     begin
         case(cur_state_LV1_ff)
             L0:
             begin
-                cur_kernal_ff <= conv_relu_done_flag ? ~cur_kernal_ff : cur_kernal_ff;
+                cur_kernal_ff <=#1  conv_relu_done_flag ? ~cur_kernal_ff : cur_kernal_ff;
             end
             L1:
             begin
-                cur_kernal_ff <= max_pooling_done_flag ? ~cur_kernal_ff : cur_kernal_ff;
+                cur_kernal_ff <=#1  max_pooling_done_flag ? ~cur_kernal_ff : cur_kernal_ff;
             end
             L2:
             begin
-                cur_kernal_ff <= flatten_done_flag     ? ~cur_kernal_ff : cur_kernal_ff;
+                cur_kernal_ff <=#1  flatten_done_flag     ? ~cur_kernal_ff : cur_kernal_ff;
             end
             default:
             begin
-                cur_kernal_ff = EXCEPTION;
+                cur_kernal_ff <=#1 EXCEPTION;
             end
         endcase
     end
@@ -435,23 +435,23 @@ always @(posedge clk or posedge reset)
 begin: PTRS
     if(reset)
     begin
-        row_ptr <= 'd1;
-        col_ptr <= 'd1;
+        row_ptr <=#1  'd1;
+        col_ptr <=#1  'd1;
     end
     else if(conv_relu_done_flag)
     begin
-        row_ptr <= L0_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
-        col_ptr <= L0_right_bound_reach_flag ? 1 : col_ptr + 1;
+        row_ptr <=#1  L0_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
+        col_ptr <=#1  L0_right_bound_reach_flag ? 1 : col_ptr + 1;
     end
     else if(max_pooling_done_flag)
     begin
-        row_ptr <= L1_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
-        col_ptr <= L1_right_bound_reach_flag ? 0 : col_ptr + 1;
+        row_ptr <=#1  L1_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
+        col_ptr <=#1  L1_right_bound_reach_flag ? 0 : col_ptr + 1;
     end
     else
     begin
-        row_ptr <= row_ptr;
-        col_ptr <= col_ptr;
+        row_ptr <=#1  row_ptr;
+        col_ptr <=#1  col_ptr;
     end
 end
 
@@ -644,77 +644,77 @@ always @(posedge clk or posedge rst)
 begin
     if(reset)
     begin
-        alu_out_ff <= 'd0;
+        alu_out_ff <=#1  'd0;
     end
     else if(STATE_MAC)
     begin
         case(offset_cnt)
             'd0:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_00 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_00 + alu_out_ff) :
                     (common_data_bus * K1_00 + alu_out_ff);
             end
             'd1:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_01 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_01 + alu_out_ff) :
                     (common_data_bus * K1_01 + alu_out_ff);
             end
             'd2:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_02 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_02 + alu_out_ff) :
                     (common_data_bus * K1_02 + alu_out_ff);
             end
             'd3:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_10 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_10 + alu_out_ff) :
                     (common_data_bus * K1_10 + alu_out_ff);
             end
             'd4:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_11 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_11 + alu_out_ff) :
                     (common_data_bus * K1_11 + alu_out_ff);
             end
             'd5:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_12 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_12 + alu_out_ff) :
                     (common_data_bus * K1_12 + alu_out_ff);
             end
             'd6:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_20 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_20 + alu_out_ff) :
                     (common_data_bus * K1_20 + alu_out_ff);
             end
             'd7:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_21 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_21 + alu_out_ff) :
                     (common_data_bus * K1_21 + alu_out_ff);
             end
             'd8:
             begin
-                alu_out_ff <=STATE_KERNAL0 ? (common_data_bus * K0_22 + alu_out_ff) :
+                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_22 + alu_out_ff) :
                     (common_data_bus * K1_22 + alu_out_ff);
             end
             default:
             begin
-                alu_out_ff <= alu_out_ff;
+                alu_out_ff <=#1  alu_out_ff;
             end
         endcase
     end
     else if(STATE_ADD_BIAS)
     begin
-        alu_out_ff <= STATE_KERNAL0 ? alu_out_ff + cnnBias0 : alu_out_ff + cnnBias1;
+        alu_out_ff <=#1  STATE_KERNAL0 ? alu_out_ff + cnnBias0 : alu_out_ff + cnnBias1;
     end
     else if(STATE_ROUND)
     begin
-        alu_out_ff <= alu_out_ff[16:35];
+        alu_out_ff <=#1  alu_out_ff[16:35];
     end
     else if(STATE_COMPARE_FOR_MAX)
     begin
-        alu_out_ff <= (common_data_bus > alu_out_ff) ? common_data_bus : alu_out_ff;
+        alu_out_ff <=#1  (common_data_bus > alu_out_ff) ? common_data_bus : alu_out_ff;
     end
     else
     begin
-        alu_out_ff <= 'd0;
+        alu_out_ff <=#1  'd0;
     end
 end
 endmodule
