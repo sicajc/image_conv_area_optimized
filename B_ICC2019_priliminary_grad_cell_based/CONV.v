@@ -1,61 +1,40 @@
 
 `timescale 1ns/10ps
 
-module  CONV(
-            clk,
-            reset,
+module  CONV#(
+            //================================
+            //  PARAMETERS
+            //================================
+            parameter W  = 20,
+            parameter B  = 8,
+            parameter ADDR_W = 12,
+            parameter MEM_SEL = 4,
+            parameter CONV_IMG_W = 64,
+            parameter MAX_POOLING_IMG_W = CONV_IMG_W / 2,
+            parameter RELU_IMG_W        = CONV_IMG_W / 2,
+            parameter FLATTEN_IMG_W = MAX_POOLING_IMG_W
+        )(
+            input					clk,
+            input					reset,
+            output reg				busy,
+            input					ready,
 
-            busy,
-            ready,
+            output reg[ADDR_W-1:0]		iaddr,
+            input     [W-1:0]			idata,
 
-            iaddr,
-            idata,
+            output reg			cwr,
+            output reg[ADDR_W-1:0]	 		caddr_wr,
+            output reg[W-1:0]	 	cdata_wr,
 
-            cwr,
-            caddr_wr,
-            cdata_wr,
+            output reg			crd,
+            output reg[ADDR_W-1:0]	 	caddr_rd,
+            input[W-1:0]	 		cdata_rd,
 
-            crd,
-            caddr_rd,
-            cdata_rd,
-
-            csel
+            output reg[MEM_SEL-1:0]	 	csel
         );
-//================================
-//  PARAMETERS
-//================================
-parameter W  = 20;
-parameter B  = 8;
-parameter ADDR_W = 12;
-parameter MEM_SEL = 4;
-parameter CONV_IMG_W = 64;
-parameter MAX_POOLING_IMG_W = CONV_IMG_W / 2;
-parameter RELU_IMG_W        = CONV_IMG_W / 2;
-parameter FLATTEN_IMG_W = MAX_POOLING_IMG_W ;
-
-
 //================================
 //  I/O
 //================================
-input					clk;
-input					reset;
-
-output reg				busy;
-input					ready;
-
-output reg[ADDR_W-1:0]		iaddr;
-input     [W-1:0]			idata;
-
-output reg			cwr;
-output reg[ADDR_W-1:0]	 		caddr_wr;
-output reg[W-1:0]	 	cdata_wr;
-
-output reg			crd;
-output reg[ADDR_W-1:0]	 	caddr_rd;
-input[W-1:0]	 		cdata_rd;
-
-output reg[MEM_SEL-1:0]	 	csel;
-
 reg[W-1:0] data_buf;
 
 //================================
@@ -224,7 +203,7 @@ wire zero_pad_flag = state_MAC && (offset_row == 0) || (offset_col == 0) || (off
 //  I/O
 //================================
 //data buffer
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: DATA_BUFFER
     if(reset)
     begin
@@ -245,7 +224,7 @@ begin: DATA_BUFFER
 end
 
 //busy
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin
     if(reset)
     begin
@@ -265,7 +244,7 @@ end
 //  CONTROLLER(CTR)
 //================================
 //LV1_FSM
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: LV1_FSM_CUR
     if(reset)
     begin
@@ -308,7 +287,7 @@ begin: LV1_FSM_NEXT
 end
 
 //LV2_FSM
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: LV2_FSM_CUR
     if(reset)
     begin
@@ -403,7 +382,7 @@ begin: LV2_FSM_NEXT
 end
 
 // current kernal status register
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: CURRENT_KERNAL
     if(reset)
     begin
@@ -454,7 +433,7 @@ end
 //================================
 //  Address Generation Unit(AGU)
 //================================
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: PTRS
     if(reset)
     begin
@@ -587,7 +566,7 @@ begin: OFFSETED_PTRS
     endcase
 end
 
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: OFFSET_CNT
     if(reset)
     begin
@@ -698,7 +677,7 @@ wire[2*W+3 : 0] twos_complement = alu_out_ff[43] ? (~alu_out_ff + 'b1) : alu_out
 //================================
 //  Arithmetic Logic Unit(ALU)
 //================================
-always @(posedge clk or negedge reset)
+always @(posedge clk or posedge reset)
 begin: ALU
     if(reset)
     begin
@@ -768,7 +747,7 @@ begin: ALU
     else if(state_ADD_BIAS)
     begin
         alu_out_ff <=  state_KERNAL0 ? alu_out_ff + $signed(CNNBIAS0)
-        : alu_out_ff + $signed(CNNBIAS1);
+                   : alu_out_ff + $signed(CNNBIAS1);
         // bias also needs to be concatenated.
     end
     else if(state_ROUND)
