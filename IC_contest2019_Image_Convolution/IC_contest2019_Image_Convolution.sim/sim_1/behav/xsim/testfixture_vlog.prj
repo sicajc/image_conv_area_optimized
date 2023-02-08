@@ -1,0 +1,10 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"../../../../../B_ICC2019_priliminary_grad_cell_based/CONV.v" \
+"../../../../../B_ICC2019_priliminary_grad_cell_based/testfixture.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

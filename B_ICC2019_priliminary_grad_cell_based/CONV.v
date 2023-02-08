@@ -40,21 +40,21 @@ parameter FLATTEN_IMG_W = MAX_POOLING_IMG_W ;
 input					clk;
 input					reset;
 
-output 				busy;
+output reg				busy;
 input					ready;
 
-output[ADDR_W-1:0]		iaddr;
-input [W-1:0]			idata;
+output reg[ADDR_W-1:0]		iaddr;
+input     [W-1:0]			idata;
 
-output	 reg			cwr;
-output[W-1:0]	 		caddr_wr;
-output[ADDR_W-1:0]	 	cdata_wr;
+output reg			cwr;
+output reg[ADDR_W-1:0]	 		caddr_wr;
+output reg[W-1:0]	 	cdata_wr;
 
-output	 reg			crd;
-output[ADDR_W-1:0]	 	caddr_rd;
+output reg			crd;
+output reg[ADDR_W-1:0]	 	caddr_rd;
 input[W-1:0]	 		cdata_rd;
 
-output[MEM_SEL-1:0]	 	csel;
+output reg[MEM_SEL-1:0]	 	csel;
 
 reg[W-1:0] data_buf;
 
@@ -103,21 +103,19 @@ localparam MAC             = 3'd1;
 localparam ADD_BIAS        = 3'd2;
 localparam ROUND           = 3'd3;
 
-wire state_RD_PIXEL_L0   = (state_L0)  && (cur_state_LV1_ff == RD_PIXEL_L0) ;
-wire state_MAC		 	 = (state_L0)  && (cur_state_LV1_ff == MAC) 		   ;
-wire state_ADD_BIAS		 = (state_L0)  && (cur_state_LV1_ff == ADD_BIAS)    ;
-wire state_ROUND		 = (state_L0)  && (cur_state_LV1_ff == ROUND)       ;
+wire state_RD_PIXEL_L0   = (state_L0)  && (cur_state_LV2_ff == RD_PIXEL_L0) ;
+wire state_MAC		 	 = (state_L0)  && (cur_state_LV2_ff == MAC) 		;
+wire state_ADD_BIAS		 = (state_L0)  && (cur_state_LV2_ff == ADD_BIAS)    ;
+wire state_ROUND		 = (state_L0)  && (cur_state_LV2_ff == ROUND)       ;
 
 //RELU
 localparam RELU            = 3'd4;
 //WriteBack
 localparam WB_L0           = 3'd5;
-//Check Value in L0_MEM0 AND L0_MEM1
-localparam CHECK_L0        = 3'd6;
 
-wire state_RELU              = (state_L0)  && (cur_state_LV1_ff == RELU)            ;
-wire state_WB_L0		 	 = (state_L0)  && (cur_state_LV1_ff == WB_L0) 		   ;
-wire state_CHECK_L0		 	 = (state_L0)  && (cur_state_LV1_ff == CHECK_L0)        ;
+wire state_RELU              = (state_L0)  && (cur_state_LV2_ff == RELU)            ;
+wire state_WB_L0		 	 = (state_L0)  && (cur_state_LV2_ff == WB_L0) 		   ;
+wire state_CHECK_L0		 	 = (state_L0)  && (cur_state_LV2_ff == CHECK_L0)        ;
 
 //_____________L1________________
 //MAXPOOLING
@@ -125,13 +123,10 @@ localparam RD_PIXEL_L1     = 3'd0;
 localparam COMPARE_FOR_MAX = 3'd1;
 //WriteBack
 localparam WB_L1           = 3'd2;
-//Check Value in L1_MEM0 AND L1_MEM1
-localparam CHECK_L1        = 3'd3;
 
-wire state_RD_PIXEL_L1              = (state_L1)  && (cur_state_LV1_ff == RD_PIXEL_L0)            ;
-wire state_COMPARE_FOR_MAX_L1		= (state_L1)  && (cur_state_LV1_ff == COMPARE_FOR_MAX) 		   ;
-wire state_WB_L1		 	 	    = (state_L1)  && (cur_state_LV1_ff == WB_L1)        ;
-wire state_CHECK_L1		 	 		= (state_L1)  && (cur_state_LV1_ff == CHECK_L1)        ;
+wire state_RD_PIXEL_L1              = (state_L1)  && (cur_state_LV2_ff == RD_PIXEL_L0)            ;
+wire state_COMPARE_FOR_MAX_L1		= (state_L1)  && (cur_state_LV2_ff == COMPARE_FOR_MAX) 		   ;
+wire state_WB_L1		 	 	    = (state_L1)  && (cur_state_LV2_ff == WB_L1)        ;
 
 //_____________L2________________
 //Flatten
@@ -141,31 +136,13 @@ localparam FLATTEN_WB      = 3'd1;
 //Check Value in L2_MEM0 AND L2_MEM1
 localparam CHECK_L2        = 3'd2;
 
-wire state_RD_PIXEL_L2              = (state_L2)  && (cur_state_LV1_ff == RD_PIXEL_L2)            ;
-wire state_FLATTEN_WB				= (state_L2)  && (cur_state_LV1_ff == FLATTEN_WB) 		   ;
-wire state_CHECK_L2		 	 	    = (state_L2)  && (cur_state_LV1_ff == CHECK_L2)        ;
+wire state_RD_PIXEL_L2              = (state_L2)  && (cur_state_LV2_ff == RD_PIXEL_L2)            ;
+wire state_FLATTEN_WB				= (state_L2)  && (cur_state_LV2_ff == FLATTEN_WB) 		   ;
+wire state_CHECK_L2		 	 	    = (state_L2)  && (cur_state_LV2_ff == CHECK_L2)        ;
 
 //Exception
 localparam EXCEPTION = 3'd7;
 wire EXCEPTION_OCCURS = cur_state_LV1_ff == EXCEPTION || cur_state_LV2_ff == EXCEPTION || cur_kernal_ff == EXCEPTION;
-
-//================================
-//  CONTROL FLAGS
-//================================
-wire L0_right_bound_reach_flag = (col_ptr == (CONV_IMG_W -1)) ;
-wire L0_bottom_reach_flag = (row_ptr == (CONV_IMG_W - 1));
-
-wire L0_done_flag = (row_ptr == (CONV_IMG_W-1)) && (col_ptr == (CONV_IMG_W - 1)) ;
-wire L1_done_flag = (row_ptr == (MAX_POOLING_IMG_W-1)) && (col_ptr == (MAX_POOLING_IMG_W - 1)) ;
-wire L2_done_flag = (row_ptr == (FLATTEN_IMG_W-1)) && (state_KERNAL1);
-
-wire L1_right_bound_reach_flag = (col_ptr == (MAX_POOLING_IMG_W-1));
-wire L1_bottom_reach_flag = (row_ptr == (MAX_POOLING_IMG_W-1));
-wire max_pooling_done_flag = L1_bottom_reach_flag && L1_right_bound_reach_flag;
-
-wire mac_done_flag = state_MAC && (offset_cnt == 'd8);
-wire conv_relu_done_flag = L0_bottom_reach_flag && L0_bottom_reach_flag;
-wire local_max_found_flag = state_COMPARE_FOR_MAX_L1 && (offset_cnt == 'd3);
 
 //================================
 //  Memory management Unit(MMU)
@@ -175,12 +152,12 @@ reg[ADDR_W-1:0] mem_addr_cnt; // MAX 4096
 //================================
 //  BUS
 //================================
-reg[W-1:0] common_data_bus;
+reg signed[W-1:0] common_data_bus;
 
 //================================
 //  Address Generation Unit(AGU)
 //================================
-localparam AGU_W = 7;
+localparam AGU_W = 8;
 reg[AGU_W - 1:0] row_ptr;
 reg[AGU_W - 1:0] col_ptr;
 
@@ -194,30 +171,52 @@ reg[4:0] offset_cnt;
 //  Arithmetic Logic Unit(ALU)
 //================================
 //KERNAL0
-localparam K0_00 =                20'h0A89E;  // Pixel 0:  6.586609e-01
-localparam K0_01 =                20'h092D5;  // Pixel 1:  5.735626e-01
-localparam K0_02 =                20'h06D43;  // Pixel 2:  4.268036e-01
-localparam K0_10 =                20'h01004;  // Pixel 3:  6.256104e-02
-localparam K0_11 =                20'hF8F71;  // Pixel 4: -4.396820e-01
-localparam K0_12 =                20'hF6E54;  // Pixel 5: -5.690308e-01
-localparam K0_20 =                20'hFA6D7;  // Pixel 6: -3.482819e-01
-localparam K0_21 =                20'hFC834;  // Pixel 7: -2.179565e-01
-localparam K0_22 =                20'hFAC19;  // Pixel 8: -3.277435e-01
+localparam signed K0_00 =                20'h0A89E;  // Pixel 0:  6.586609e-01
+localparam signed K0_01 =                20'h092D5;  // Pixel 1:  5.735626e-01
+localparam signed K0_02 =                20'h06D43;  // Pixel 2:  4.268036e-01
+localparam signed K0_10 =                20'h01004;  // Pixel 3:  6.256104e-02
+localparam signed K0_11 =                20'hF8F71;  // Pixel 4: -4.396820e-01
+localparam signed K0_12 =                20'hF6E54;  // Pixel 5: -5.690308e-01
+localparam signed K0_20 =                20'hFA6D7;  // Pixel 6: -3.482819e-01
+localparam signed K0_21 =                20'hFC834;  // Pixel 7: -2.179565e-01
+localparam signed K0_22 =                20'hFAC19;  // Pixel 8: -3.277435e-01
 //KERNAL1
-localparam K1_00 = 20'hFDB55;  // Pixel 0: -1.432343e-01
-localparam K1_01 = 20'h02992;  // Pixel 1:  1.623840e-01
-localparam K1_02 = 20'hFC994;  // Pixel 2: -2.125854e-01
-localparam K1_10 = 20'h050FD;  // Pixel 3:  3.163605e-01
-localparam K1_11 = 20'h02F20;  // Pixel 4:  1.840820e-01
-localparam K1_12 = 20'h0202D;  // Pixel 5:  1.256866e-01
-localparam K1_20 = 20'h03BD7;  // Pixel 6:  2.337494e-01
-localparam K1_21 = 20'hFD369;  // Pixel 7: -1.741791e-01
-localparam K1_22 = 20'h05E68;   // Pixel 8:  3.687744e-01
-//BIAS
-localparam [W-1:0] CNNBIAS0 = 20'h01310;  // Pixel 0: 7.446289e-02
-localparam [W-1:0] CNNBIAS1 = 20'hF7295;  // Pixel 1: -5.524139e-01
+localparam signed K1_00 = 20'hFDB55;  // Pixel 0: -1.432343e-01
+localparam signed K1_01 = 20'h02992;  // Pixel 1:  1.623840e-01
+localparam signed K1_02 = 20'hFC994;  // Pixel 2: -2.125854e-01
+localparam signed K1_10 = 20'h050FD;  // Pixel 3:  3.163605e-01
+localparam signed K1_11 = 20'h02F20;  // Pixel 4:  1.840820e-01
+localparam signed K1_12 = 20'h0202D;  // Pixel 5:  1.256866e-01
+localparam signed K1_20 = 20'h03BD7;  // Pixel 6:  2.337494e-01
+localparam signed K1_21 = 20'hFD369;  // Pixel 7: -1.741791e-01
+localparam signed K1_22 = 20'h05E68;   // Pixel 8:  3.687744e-01
+//ADD_BIAS
+localparam signed [W-1:0] CNNBIAS0 = 20'h01310;  // Pixel 0: 7.446289e-02
+localparam signed [W-1:0] CNNBIAS1 = 20'hF7295;  // Pixel 1: -5.524139e-01
 
-reg[(2*W+4)-1:0] alu_out_ff;
+reg signed[(2*W+4)-1:0] alu_out_ff;
+
+//================================
+//  CONTROL FLAGS
+//================================
+wire L0_right_bound_reach_flag = (col_ptr == (CONV_IMG_W)) ;
+wire L0_bottom_reach_flag = (row_ptr == (CONV_IMG_W));
+
+wire L0_done_flag = conv_relu_done_flag && state_KERNAL1 ;
+wire L1_done_flag = (row_ptr == (MAX_POOLING_IMG_W-1)) && (col_ptr == (MAX_POOLING_IMG_W - 1)) ;
+wire L2_done_flag = (row_ptr == (FLATTEN_IMG_W-1)) && (state_KERNAL1);
+
+wire L1_right_bound_reach_flag = (col_ptr == (MAX_POOLING_IMG_W-1));
+wire L1_bottom_reach_flag = (row_ptr == (MAX_POOLING_IMG_W-1));
+wire max_pooling_done_flag = L1_bottom_reach_flag && L1_right_bound_reach_flag;
+
+wire mac_done_flag = state_MAC && (offset_cnt == 'd8);
+wire conv_relu_done_flag = L0_bottom_reach_flag && L0_right_bound_reach_flag && state_WB_L0;
+wire local_max_found_flag = state_COMPARE_FOR_MAX_L1 && (offset_cnt == 'd3);
+
+wire flatten_done_flag = (row_ptr == (FLATTEN_IMG_W - 1)) && (col_ptr == (FLATTEN_IMG_W - 1));
+
+wire zero_pad_flag = state_MAC && (offset_row == 0) || (offset_col == 0) || (offset_row == 65) || (offset_col == 65);
 
 //================================================================
 //  MAIN DESIGN
@@ -232,11 +231,11 @@ begin: DATA_BUFFER
     begin
         data_buf <=#1  'd0;
     end
-    else if(RD_PIXEL_L0)
+    else if(state_RD_PIXEL_L0 || state_MAC)
     begin
         data_buf <=#1  idata;
     end
-    else if(RD_PIXEL_L1 || RD_PIXEL_L2)
+    else if(state_RD_PIXEL_L1 || state_RD_PIXEL_L2)
     begin
         data_buf <=#1  cdata_rd;
     end
@@ -247,13 +246,27 @@ begin: DATA_BUFFER
 end
 
 //busy
-assign busy = (~state_DONE || ~state_IDLE) || (~state_CHECK_L0 || ~state_CHECK_L1 || ~state_CHECK_L2);
+always @(posedge clk or negedge reset)
+begin
+    if(reset)
+    begin
+        busy <= 1'b0;
+    end
+    else if(state_DONE || state_IDLE || (state_CHECK_L0 || state_CHECK_L1 || state_CHECK_L2))
+    begin
+        busy <= 1'b0;
+    end
+    else
+    begin
+        busy <= 1'b1;
+    end
+end
 
 //================================
 //  CONTROLLER(CTR)
 //================================
 //LV1_FSM
-always @(posedge clk or posedge reset)
+always @(posedge clk or negedge reset)
 begin: LV1_FSM_CUR
     if(reset)
     begin
@@ -265,8 +278,6 @@ begin: LV1_FSM_CUR
     end
 end
 
-
-
 always @(*)
 begin: LV1_FSM_NEXT
     case(cur_state_LV1_ff)
@@ -276,15 +287,15 @@ begin: LV1_FSM_NEXT
         end
         L0:
         begin
-            next_state_LV1 = L0_done_flag ? L1 : L0;
+            next_state_LV1 = L0_done_flag && (ready) ? L1 : L0;
         end
         L1:
         begin
-            next_state_LV1 = L1_done_flag ? L2 : L1;
+            next_state_LV1 = L1_done_flag && (ready) ? L2 : L1;
         end
         L2:
         begin
-            next_state_LV1 = L2_done_flag ? DONE:L2;
+            next_state_LV1 = L2_done_flag && (ready) ? DONE:L2;
         end
         DONE:
         begin
@@ -298,7 +309,7 @@ begin: LV1_FSM_NEXT
 end
 
 //LV2_FSM
-always @(posedge clk or posedge reset)
+always @(posedge clk or negedge reset)
 begin: LV2_FSM_CUR
     if(reset)
     begin
@@ -323,9 +334,9 @@ begin: LV2_FSM_NEXT
                 end
                 MAC:
                 begin
-                    next_state_LV2 = mac_done_flag ? BIAS : MAC;
+                    next_state_LV2 = mac_done_flag ? ADD_BIAS : MAC;
                 end
-                BIAS:
+                ADD_BIAS:
                 begin
                     next_state_LV2 = ROUND;
                 end
@@ -347,7 +358,7 @@ begin: LV2_FSM_NEXT
                 end
                 default:
                 begin
-                    next_state_LV2 = EXCEPTION;
+                    next_state_LV2 = RD_PIXEL_L0;
                 end
             endcase
         end
@@ -372,7 +383,7 @@ begin: LV2_FSM_NEXT
                 end
                 default:
                 begin
-                    next_state_LV2 = EXCEPTION;
+                    next_state_LV2 = RD_PIXEL_L1;
                 end
             endcase
         end
@@ -393,7 +404,7 @@ begin: LV2_FSM_NEXT
                 end
                 default:
                 begin
-                    next_state_LV2 = EXCEPTION;
+                    next_state_LV2 = RD_PIXEL_L2;
                 end
             endcase
         end
@@ -403,10 +414,9 @@ begin: LV2_FSM_NEXT
         end
     endcase
 end
-wire flatten_done_flag = (row_ptr == (FLATTEN_IMG_W - 1)) && (col_ptr == (FLATTEN_IMG_W - 1));
 
 // current kernal status register
-always @(posedge clk or posedge rst)
+always @(posedge clk or negedge reset)
 begin: CURRENT_KERNAL
     if(reset)
     begin
@@ -429,7 +439,7 @@ begin: CURRENT_KERNAL
             end
             default:
             begin
-                cur_kernal_ff <=#1 EXCEPTION;
+                cur_kernal_ff <=#1 cur_kernal_ff;
             end
         endcase
     end
@@ -440,7 +450,7 @@ end
 //================================
 always @(*)
 begin:BUS
-    if(state_MAC || state_COMPARE_FOR_MAX || state_FLATTEN_WB)
+    if(state_RD_PIXEL_L0 || state_RD_PIXEL_L1 || state_RD_PIXEL_L2 || state_MAC || state_COMPARE_FOR_MAX_L1 || state_FLATTEN_WB)
     begin
         common_data_bus = data_buf;
     end
@@ -450,26 +460,34 @@ begin:BUS
     end
     else
     begin
-        common_data_bus = data_buf;
+        common_data_bus = 'd404;
     end
 end
 
 //================================
 //  Address Generation Unit(AGU)
 //================================
-always @(posedge clk or posedge reset)
+always @(posedge clk or negedge reset)
 begin: PTRS
     if(reset)
     begin
         row_ptr <=#1  'd1;
         col_ptr <=#1  'd1;
     end
-    else if(conv_relu_done_flag)
+    else if(state_WB_L0)
     begin
-        row_ptr <=#1  L0_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
-        col_ptr <=#1  L0_right_bound_reach_flag ? 1 : col_ptr + 1;
+        if(conv_relu_done_flag)
+        begin
+            row_ptr <=#1  'd1;
+            col_ptr <=#1  'd1;
+        end
+        else
+        begin
+            row_ptr <=#1  L0_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
+            col_ptr <=#1  L0_right_bound_reach_flag ? 1 : col_ptr + 1;
+        end
     end
-    else if(max_pooling_done_flag)
+    else if(state_WB_L1)
     begin
         row_ptr <=#1  L1_right_bound_reach_flag ? row_ptr + 1 : row_ptr;
         col_ptr <=#1  L1_right_bound_reach_flag ? 0 : col_ptr + 1;
@@ -577,7 +595,7 @@ begin: OFFSETED_PTRS
     endcase
 end
 
-always @(posedge clk or posedge reset)
+always @(posedge clk or negedge reset)
 begin: OFFSET_CNT
     if(reset)
     begin
@@ -587,7 +605,7 @@ begin: OFFSET_CNT
     begin
         offset_cnt <= mac_done_flag ? 0 : offset_cnt + 1;
     end
-    else if(state_COMPARE_FOR_MAX)
+    else if(state_COMPARE_FOR_MAX_L1)
     begin
         offset_cnt <= local_max_found_flag ? 0 : offset_cnt + 1;
     end
@@ -628,7 +646,7 @@ end
 //iaddr
 always @(*)
 begin: IN_ADDR
-    if(RD_PIXEL_L0)
+    if(state_RD_PIXEL_L0 || state_MAC)
     begin
         iaddr = (offset_col-1) % CONV_IMG_W + (offset_row-1)* CONV_IMG_W;
     end
@@ -659,13 +677,13 @@ begin: CHIP_WR
     if(state_WB_L0)
     begin
         cwr = 1;
-        caddr_wr = offset_col + offset_row * CONV_IMG_W ;
+        caddr_wr = (col_ptr-1) + (row_ptr-1) * CONV_IMG_W ;
         cdata_wr = common_data_bus;
     end
     else if(state_WB_L1)
     begin
         cwr = 1;
-        caddr_wr = offset_col + offset_row * MAX_POOLING_IMG_W;
+        caddr_wr = col_ptr + row_ptr * MAX_POOLING_IMG_W;
         cdata_wr = common_data_bus;
     end
     else if(state_FLATTEN_WB)
@@ -682,11 +700,12 @@ begin: CHIP_WR
     end
 end
 
+wire[W-1:0] rounded_value = alu_out_ff[35:16];
 
 //================================
 //  Arithmetic Logic Unit(ALU)
 //================================
-always @(posedge clk or posedge rst)
+always @(posedge clk or negedge reset)
 begin: ALU
     if(reset)
     begin
@@ -694,73 +713,81 @@ begin: ALU
     end
     else if(state_MAC)
     begin
-        case(offset_cnt)
-            'd0:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_00 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_00 + $signed(alu_out_ff));
-            end
-            'd1:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_01 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_01 + $signed(alu_out_ff));
-            end
-            'd2:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_02 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_02 + $signed(alu_out_ff));
-            end
-            'd3:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_10 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_10 + $signed(alu_out_ff));
-            end
-            'd4:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_11 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_11 + $signed(alu_out_ff));
-            end
-            'd5:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_12 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_12 + $signed(alu_out_ff));
-            end
-            'd6:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_20 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_20 + $signed(alu_out_ff));
-            end
-            'd7:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_21 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_21 + $signed(alu_out_ff));
-            end
-            'd8:
-            begin
-                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_22 + $signed(alu_out_ff)) :
-                    ($signed(common_data_bus) * K1_22 + $signed(alu_out_ff));
-            end
-            default:
-            begin
-                alu_out_ff <=#1  alu_out_ff;
-            end
-        endcase
+        if(zero_pad_flag)
+        begin
+            alu_out_ff <= alu_out_ff;
+        end
+        else
+        begin
+            case(offset_cnt)
+                'd0:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_00) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_00) + (alu_out_ff));
+                end
+                'd1:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_01) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_01) + (alu_out_ff));
+                end
+                'd2:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_02) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_02) + (alu_out_ff));
+                end
+                'd3:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_10) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_10) + (alu_out_ff));
+                end
+                'd4:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_11) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_11) + (alu_out_ff));
+                end
+                'd5:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_12) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_12) + (alu_out_ff));
+                end
+                'd6:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_20) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_20) + (alu_out_ff));
+                end
+                'd7:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_21) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_21) + (alu_out_ff));
+                end
+                'd8:
+                begin
+                    alu_out_ff <=#1 state_KERNAL0 ? ((common_data_bus) * (K0_22) + (alu_out_ff)) :
+                        ((common_data_bus) * (K1_22) + (alu_out_ff));
+                end
+                default:
+                begin
+                    alu_out_ff <=#1  alu_out_ff;
+                end
+            endcase
+        end
     end
     else if(state_ADD_BIAS)
     begin
-        alu_out_ff <=#1  state_KERNAL0 ? $signed(alu_out_ff) + CNNBIAS0 : $signed(alu_out_ff) + CNNBIAS1;
+        alu_out_ff <=#1  state_KERNAL0 ? (alu_out_ff) + (CNNBIAS0) : (alu_out_ff) + (CNNBIAS1);
     end
     else if(state_ROUND)
     begin
-        alu_out_ff <=#1  (alu_out_ff[15] == 1'b1) ? alu_out_ff[16:35] + 'b1 : alu_out_ff[16:35];
+        alu_out_ff <=#1
+        {{24{alu_out_ff[43]}},alu_out_ff[35:16] + {19'b0,alu_out_ff[15]}} ; //When rounding must concatenate!
     end
     else if(state_RELU)
     begin
-        alu_out_ff <=#1  ($signed(alu_out_ff) > 0) ? alu_out_ff : 'd0;
+        alu_out_ff <=#1  (alu_out_ff >= $signed('d0)) ? alu_out_ff : 'd0;
     end
-    else if(state_COMPARE_FOR_MAX)
+    else if(state_COMPARE_FOR_MAX_L1)
     begin
-        alu_out_ff <=#1  ($signed(common_data_bus) > $signed(alu_out_ff)) ? common_data_bus : alu_out_ff;
+        alu_out_ff <=#1  ((common_data_bus) > (alu_out_ff)) ? common_data_bus : alu_out_ff;
     end
     else
     begin
