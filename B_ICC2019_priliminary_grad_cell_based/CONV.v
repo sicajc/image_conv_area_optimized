@@ -31,6 +31,8 @@ parameter MEM_SEL = 4;
 parameter CONV_IMG_W = 64;
 parameter MAX_POOLING_IMG_W = CONV_IMG_W / 2;
 parameter RELU_IMG_W        = CONV_IMG_W / 2;
+parameter FLATTEN_IMG_W = MAX_POOLING_IMG_W ;
+
 
 //================================
 //  I/O
@@ -71,7 +73,7 @@ reg[2:0] next_state_LV2;
 reg cur_kernal_ff;
 
 //==================
-//  STATES
+//  stateS
 //==================
 //LV1_FSM
 localparam IDLE = 3'd0;
@@ -80,18 +82,18 @@ localparam L1   = 3'd2;
 localparam L2   = 3'd3;
 localparam DONE = 3'd4;
 
-wire STATE_IDLE     = cur_state_LV1_ff == IDLE;
-wire STATE_L0       = cur_state_LV1_ff == L0;
-wire STATE_L1       = cur_state_LV1_ff == L1;
-wire STATE_L2       = cur_state_LV1_ff == L2;
-wire STATE_DONE     = cur_state_LV1_ff == DONE;
+wire state_IDLE     = cur_state_LV1_ff == IDLE;
+wire state_L0       = cur_state_LV1_ff == L0;
+wire state_L1       = cur_state_LV1_ff == L1;
+wire state_L2       = cur_state_LV1_ff == L2;
+wire state_DONE     = cur_state_LV1_ff == DONE;
 
 //CURRENT KERNAL
 localparam K0   = 1'b0;
 localparam K1   = 1'b1;
 
-wire STATE_KERNAL0       = cur_kernal_ff == K0;
-wire STATE_KERNAL1       = cur_kernal_ff == K1;
+wire state_KERNAL0       = cur_kernal_ff == K0;
+wire state_KERNAL1       = cur_kernal_ff == K1;
 
 //LV2_FSM
 //_____________L0________________
@@ -101,10 +103,10 @@ localparam MAC             = 3'd1;
 localparam ADD_BIAS        = 3'd2;
 localparam ROUND           = 3'd3;
 
-wire STATE_RD_PIXEL_L0   = (STATE_L0)  && (cur_state_LV1_ff == RD_PIXEL_L0) ;
-wire STATE_MAC		 	 = (STATE_L0)  && (cur_state_LV1_ff == MAC) 		   ;
-wire STATE_ADD_BIAS		 = (STATE_L0)  && (cur_state_LV1_ff == ADD_BIAS)    ;
-wire STATE_ROUND		 = (STATE_L0)  && (cur_state_LV1_ff == ROUND)       ;
+wire state_RD_PIXEL_L0   = (state_L0)  && (cur_state_LV1_ff == RD_PIXEL_L0) ;
+wire state_MAC		 	 = (state_L0)  && (cur_state_LV1_ff == MAC) 		   ;
+wire state_ADD_BIAS		 = (state_L0)  && (cur_state_LV1_ff == ADD_BIAS)    ;
+wire state_ROUND		 = (state_L0)  && (cur_state_LV1_ff == ROUND)       ;
 
 //RELU
 localparam RELU            = 3'd4;
@@ -113,9 +115,9 @@ localparam WB_L0           = 3'd5;
 //Check Value in L0_MEM0 AND L0_MEM1
 localparam CHECK_L0        = 3'd6;
 
-wire STATE_RELU              = (STATE_L0)  && (cur_state_LV1_ff == RELU)            ;
-wire STATE_WB_L0		 	 = (STATE_L0)  && (cur_state_LV1_ff == WB_L0) 		   ;
-wire STATE_CHECK_L0		 	 = (STATE_L0)  && (cur_state_LV1_ff == CHECK_L0)        ;
+wire state_RELU              = (state_L0)  && (cur_state_LV1_ff == RELU)            ;
+wire state_WB_L0		 	 = (state_L0)  && (cur_state_LV1_ff == WB_L0) 		   ;
+wire state_CHECK_L0		 	 = (state_L0)  && (cur_state_LV1_ff == CHECK_L0)        ;
 
 //_____________L1________________
 //MAXPOOLING
@@ -126,10 +128,10 @@ localparam WB_L1           = 3'd2;
 //Check Value in L1_MEM0 AND L1_MEM1
 localparam CHECK_L1        = 3'd3;
 
-wire STATE_RD_PIXEL_L1              = (STATE_L1)  && (cur_state_LV1_ff == RD_PIXEL_L0)            ;
-wire STATE_COMPARE_FOR_MAX_L1		= (STATE_L1)  && (cur_state_LV1_ff == COMPARE_FOR_MAX) 		   ;
-wire STATE_WB_L1		 	 	    = (STATE_L1)  && (cur_state_LV1_ff == WB_L1)        ;
-wire STATE_CHECK_L1		 	 		= (STATE_L1)  && (cur_state_LV1_ff == CHECK_L1)        ;
+wire state_RD_PIXEL_L1              = (state_L1)  && (cur_state_LV1_ff == RD_PIXEL_L0)            ;
+wire state_COMPARE_FOR_MAX_L1		= (state_L1)  && (cur_state_LV1_ff == COMPARE_FOR_MAX) 		   ;
+wire state_WB_L1		 	 	    = (state_L1)  && (cur_state_LV1_ff == WB_L1)        ;
+wire state_CHECK_L1		 	 		= (state_L1)  && (cur_state_LV1_ff == CHECK_L1)        ;
 
 //_____________L2________________
 //Flatten
@@ -139,9 +141,9 @@ localparam FLATTEN_WB      = 3'd1;
 //Check Value in L2_MEM0 AND L2_MEM1
 localparam CHECK_L2        = 3'd2;
 
-wire STATE_RD_PIXEL_L2              = (STATE_L2)  && (cur_state_LV1_ff == RD_PIXEL_L2)            ;
-wire STATE_FLATTEN_WB				= (STATE_L2)  && (cur_state_LV1_ff == FLATTEN_WB) 		   ;
-wire STATE_CHECK_L2		 	 	    = (STATE_L2)  && (cur_state_LV1_ff == CHECK_L2)        ;
+wire state_RD_PIXEL_L2              = (state_L2)  && (cur_state_LV1_ff == RD_PIXEL_L2)            ;
+wire state_FLATTEN_WB				= (state_L2)  && (cur_state_LV1_ff == FLATTEN_WB) 		   ;
+wire state_CHECK_L2		 	 	    = (state_L2)  && (cur_state_LV1_ff == CHECK_L2)        ;
 
 //Exception
 localparam EXCEPTION = 3'd7;
@@ -150,7 +152,20 @@ wire EXCEPTION_OCCURS = cur_state_LV1_ff == EXCEPTION || cur_state_LV2_ff == EXC
 //================================
 //  CONTROL FLAGS
 //================================
+wire L0_right_bound_reach_flag = (col_ptr == (CONV_IMG_W -1)) ;
+wire L0_bottom_reach_flag = (row_ptr == (CONV_IMG_W - 1));
 
+wire L0_done_flag = (row_ptr == (CONV_IMG_W-1)) && (col_ptr == (CONV_IMG_W - 1)) ;
+wire L1_done_flag = (row_ptr == (MAX_POOLING_IMG_W-1)) && (col_ptr == (MAX_POOLING_IMG_W - 1)) ;
+wire L2_done_flag = (row_ptr == (FLATTEN_IMG_W-1)) && (state_KERNAL1);
+
+wire L1_right_bound_reach_flag = (col_ptr == (MAX_POOLING_IMG_W-1));
+wire L1_bottom_reach_flag = (row_ptr == (MAX_POOLING_IMG_W-1));
+wire max_pooling_done_flag = L1_bottom_reach_flag && L1_right_bound_reach_flag;
+
+wire mac_done_flag = state_MAC && (offset_cnt == 'd8);
+wire conv_relu_done_flag = L0_bottom_reach_flag && L0_bottom_reach_flag;
+wire local_max_found_flag = state_COMPARE_FOR_MAX_L1 && (offset_cnt == 'd3);
 
 //================================
 //  Memory management Unit(MMU)
@@ -168,8 +183,12 @@ reg[W-1:0] common_data_bus;
 localparam AGU_W = 7;
 reg[AGU_W - 1:0] row_ptr;
 reg[AGU_W - 1:0] col_ptr;
+
 reg[AGU_W - 1:0] offset_row;
 reg[AGU_W - 1:0] offset_col;
+
+reg[4:0] offset_cnt;
+
 
 //================================
 //  Arithmetic Logic Unit(ALU)
@@ -195,12 +214,10 @@ localparam K1_20 = 20'h03BD7;  // Pixel 6:  2.337494e-01
 localparam K1_21 = 20'hFD369;  // Pixel 7: -1.741791e-01
 localparam K1_22 = 20'h05E68;   // Pixel 8:  3.687744e-01
 //BIAS
-localparam [W-1:0] cnnBias0 = 20'h01310;  // Pixel 0: 7.446289e-02
-localparam [W-1:0] cnnBias1 = 20'hF7295;  // Pixel 1: -5.524139e-01
+localparam [W-1:0] CNNBIAS0 = 20'h01310;  // Pixel 0: 7.446289e-02
+localparam [W-1:0] CNNBIAS1 = 20'hF7295;  // Pixel 1: -5.524139e-01
 
 reg[(2*W+4)-1:0] alu_out_ff;
-
-reg[4:0] offset_cnt;
 
 //================================================================
 //  MAIN DESIGN
@@ -230,7 +247,7 @@ begin: DATA_BUFFER
 end
 
 //busy
-assign busy = (~STATE_DONE || ~STATE_IDLE) || (~STATE_CHECK_L0 || ~STATE_CHECK_L1 || ~STATE_CHECK_L2);
+assign busy = (~state_DONE || ~state_IDLE) || (~state_CHECK_L0 || ~state_CHECK_L1 || ~state_CHECK_L2);
 
 //================================
 //  CONTROLLER(CTR)
@@ -247,6 +264,8 @@ begin: LV1_FSM_CUR
         cur_state_LV1_ff <=#1  next_state_LV1;
     end
 end
+
+
 
 always @(*)
 begin: LV1_FSM_NEXT
@@ -290,6 +309,7 @@ begin: LV2_FSM_CUR
         cur_state_LV2_ff <=#1  next_state_LV2;
     end
 end
+
 
 always @(*)
 begin: LV2_FSM_NEXT
@@ -383,6 +403,7 @@ begin: LV2_FSM_NEXT
         end
     endcase
 end
+wire flatten_done_flag = (row_ptr == (FLATTEN_IMG_W - 1)) && (col_ptr == (FLATTEN_IMG_W - 1));
 
 // current kernal status register
 always @(posedge clk or posedge rst)
@@ -419,11 +440,11 @@ end
 //================================
 always @(*)
 begin:BUS
-    if(STATE_MAC || STATE_COMPARE_FOR_MAX || STATE_FLATTEN_WB)
+    if(state_MAC || state_COMPARE_FOR_MAX || state_FLATTEN_WB)
     begin
         common_data_bus = data_buf;
     end
-    else if(STATE_WB_L0 || STATE_WB_L1)
+    else if(state_WB_L0 || state_WB_L1)
     begin
         common_data_bus = alu_out_ff[19:0];
     end
@@ -562,11 +583,11 @@ begin: OFFSET_CNT
     begin
         offset_cnt <= 'd0;
     end
-    else if(STATE_MAC)
+    else if(state_MAC)
     begin
         offset_cnt <= mac_done_flag ? 0 : offset_cnt + 1;
     end
-    else if(STATE_COMPARE_FOR_MAX)
+    else if(state_COMPARE_FOR_MAX)
     begin
         offset_cnt <= local_max_found_flag ? 0 : offset_cnt + 1;
     end
@@ -590,15 +611,15 @@ localparam L2_MEM_ACCESS= 3'b101;
 //csel
 always @(*)
 begin: CHIP_SELECT
-    if(STATE_WB_L0 || STATE_RD_PIXEL_L1)
+    if(state_WB_L0 || state_RD_PIXEL_L1)
     begin
-        csel = STATE_KERNAL0 ? L0_MEM0_ACCESS: L0_MEM1_ACCESS;
+        csel = state_KERNAL0 ? L0_MEM0_ACCESS: L0_MEM1_ACCESS;
     end
-    else if(STATE_WB_L1 || STATE_RD_PIXEL_L2)
+    else if(state_WB_L1 || state_RD_PIXEL_L2)
     begin
-        csel = STATE_KERNAL0 ? L1_MEM0_ACCESS: L1_MEM1_ACCESS ;
+        csel = state_KERNAL0 ? L1_MEM0_ACCESS: L1_MEM1_ACCESS ;
     end
-    else if(STATE_FLATTEN_WB)
+    else if(state_FLATTEN_WB)
     begin
         csel = L2_MEM_ACCESS;
     end
@@ -620,7 +641,7 @@ end
 //crd, caddr_rd
 always @(*)
 begin: CHIP_RD
-    if(STATE_RD_PIXEL_L1||STATE_RD_PIXEL_L2)
+    if(state_RD_PIXEL_L1||state_RD_PIXEL_L2)
     begin
         crd = 1;
         caddr_rd = offset_col + offset_row * MAX_POOLING_IMG_W ;
@@ -635,19 +656,19 @@ end
 //cwr,cdata_wr,caddr_wr
 always @(*)
 begin: CHIP_WR
-    if(STATE_WB_L0)
+    if(state_WB_L0)
     begin
         cwr = 1;
         caddr_wr = offset_col + offset_row * CONV_IMG_W ;
         cdata_wr = common_data_bus;
     end
-    else if(STATE_WB_L1)
+    else if(state_WB_L1)
     begin
         cwr = 1;
         caddr_wr = offset_col + offset_row * MAX_POOLING_IMG_W;
         cdata_wr = common_data_bus;
     end
-    else if(STATE_FLATTEN_WB)
+    else if(state_FLATTEN_WB)
     begin
         cwr = 1;
         caddr_wr = mem_addr_cnt;
@@ -671,53 +692,53 @@ begin: ALU
     begin
         alu_out_ff <=#1  'd0;
     end
-    else if(STATE_MAC)
+    else if(state_MAC)
     begin
         case(offset_cnt)
             'd0:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_00 + alu_out_ff) :
-                    (common_data_bus * K1_00 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_00 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_00 + $signed(alu_out_ff));
             end
             'd1:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_01 + alu_out_ff) :
-                    (common_data_bus * K1_01 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_01 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_01 + $signed(alu_out_ff));
             end
             'd2:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_02 + alu_out_ff) :
-                    (common_data_bus * K1_02 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_02 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_02 + $signed(alu_out_ff));
             end
             'd3:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_10 + alu_out_ff) :
-                    (common_data_bus * K1_10 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_10 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_10 + $signed(alu_out_ff));
             end
             'd4:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_11 + alu_out_ff) :
-                    (common_data_bus * K1_11 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_11 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_11 + $signed(alu_out_ff));
             end
             'd5:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_12 + alu_out_ff) :
-                    (common_data_bus * K1_12 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_12 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_12 + $signed(alu_out_ff));
             end
             'd6:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_20 + alu_out_ff) :
-                    (common_data_bus * K1_20 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_20 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_20 + $signed(alu_out_ff));
             end
             'd7:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_21 + alu_out_ff) :
-                    (common_data_bus * K1_21 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_21 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_21 + $signed(alu_out_ff));
             end
             'd8:
             begin
-                alu_out_ff <=#1 STATE_KERNAL0 ? (common_data_bus * K0_22 + alu_out_ff) :
-                    (common_data_bus * K1_22 + alu_out_ff);
+                alu_out_ff <=#1 state_KERNAL0 ? ($signed(common_data_bus) * K0_22 + $signed(alu_out_ff)) :
+                    ($signed(common_data_bus) * K1_22 + $signed(alu_out_ff));
             end
             default:
             begin
@@ -725,17 +746,21 @@ begin: ALU
             end
         endcase
     end
-    else if(STATE_ADD_BIAS)
+    else if(state_ADD_BIAS)
     begin
-        alu_out_ff <=#1  STATE_KERNAL0 ? alu_out_ff + cnnBias0 : alu_out_ff + cnnBias1;
+        alu_out_ff <=#1  state_KERNAL0 ? $signed(alu_out_ff) + CNNBIAS0 : $signed(alu_out_ff) + CNNBIAS1;
     end
-    else if(STATE_ROUND)
+    else if(state_ROUND)
     begin
-        alu_out_ff <=#1  alu_out_ff[16:35];
+        alu_out_ff <=#1  (alu_out_ff[15] == 1'b1) ? alu_out_ff[16:35] + 'b1 : alu_out_ff[16:35];
     end
-    else if(STATE_COMPARE_FOR_MAX)
+    else if(state_RELU)
     begin
-        alu_out_ff <=#1  (common_data_bus > alu_out_ff) ? common_data_bus : alu_out_ff;
+        alu_out_ff <=#1  ($signed(alu_out_ff) > 0) ? alu_out_ff : 'd0;
+    end
+    else if(state_COMPARE_FOR_MAX)
+    begin
+        alu_out_ff <=#1  ($signed(common_data_bus) > $signed(alu_out_ff)) ? common_data_bus : alu_out_ff;
     end
     else
     begin
