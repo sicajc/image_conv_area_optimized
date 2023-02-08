@@ -1,5 +1,5 @@
 INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/User/Desktop/ic_contest_image_convolution/B_ICC2019_priliminary_grad_cell_based/CONV.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module CONV
-WARNING: [VRFC 10-3380] identifier 'conv_relu_done_flag' is used before its declaration [C:/Users/User/Desktop/ic_contest_image_convolution/B_ICC2019_priliminary_grad_cell_based/CONV.v:210]
+WARNING: [VRFC 10-3380] identifier 'conv_relu_done_flag' is used before its declaration [C:/Users/User/Desktop/ic_contest_image_convolution/B_ICC2019_priliminary_grad_cell_based/CONV.v:204]
 INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/User/Desktop/ic_contest_image_convolution/B_ICC2019_priliminary_grad_cell_based/testfixture.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module testfixture

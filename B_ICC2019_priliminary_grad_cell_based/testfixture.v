@@ -10,6 +10,7 @@
 `define L1_EXP1        "C:/Users/User/Desktop/ic_contest_image_convolution/B_ICC2019_priliminary_grad_cell_based/dat_grad/cnn_layer1_exp1.dat"
 `define L2_EXP        "C:/Users/User/Desktop/ic_contest_image_convolution/B_ICC2019_priliminary_grad_cell_based/dat_grad/cnn_layer2_exp.dat"
 
+
 module testfixture;
 
 
